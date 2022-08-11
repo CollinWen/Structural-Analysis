@@ -4,6 +4,7 @@ using UnityEngine;
 using System;
 using System.Linq;
 using System.Globalization;
+using dsg_wbm;
 
 public class TrussRenderer : MonoBehaviour
 {

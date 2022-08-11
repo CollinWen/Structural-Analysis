@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MathNet.Numerics.LinearAlgebra;
+using UnityEngine;
 
 namespace dsg_wbm
 {
@@ -218,32 +219,74 @@ namespace dsg_wbm
             Matrix<double> k = Matrix<double>.Build.Dense(12, 12);
 
             // ROW 1-3
-            k.SetSubMatrix(0, 2, 0, 2, a); // block [0:2,0:2]
-            k.SetSubMatrix(0, 2, 3, 5, b); // block [0:2,3:5]
-            k.SetSubMatrix(0, 2, 6, 8, a.Negate()); // block [0:2,6:8]
-            k.SetSubMatrix(0, 2, 9, 11, b); // block [0:2, 9:11]
+            k.SetSubMatrix(0, 3, 0, 3, a); // block [0:2,0:2]
+            k.SetSubMatrix(0, 3, 3, 3, b); // block [0:2,3:5]
+            k.SetSubMatrix(0, 3, 6, 3, a.Negate()); // block [0:2,6:8]
+            k.SetSubMatrix(0, 3, 9, 3, b); // block [0:2, 9:11]
 
             // ROW 4-6
-            k.SetSubMatrix(3, 5, 0, 2, b.Transpose());
-            k.SetSubMatrix(3, 5, 3, 5, c);
-            k.SetSubMatrix(3, 5, 6, 8, b.Transpose().Negate());
-            k.SetSubMatrix(3, 5, 9, 11, d);
+            k.SetSubMatrix(3, 3, 0, 3, b.Transpose());
+            k.SetSubMatrix(3, 3, 3, 3, c);
+            k.SetSubMatrix(3, 3, 6, 3, b.Transpose().Negate());
+            k.SetSubMatrix(3, 3, 9, 3, d);
 
             // ROW 7-9
-            k.SetSubMatrix(6, 8, 0, 2, a.Negate());
-            k.SetSubMatrix(6, 8, 3, 5, b.Negate());
-            k.SetSubMatrix(6, 8, 6, 8, a);
-            k.SetSubMatrix(6, 8, 9, 11, b.Negate());
+            k.SetSubMatrix(6, 3, 0, 3, a.Negate());
+            k.SetSubMatrix(6, 3, 3, 3, b.Negate());
+            k.SetSubMatrix(6, 3, 6, 3, a);
+            k.SetSubMatrix(6, 3, 9, 3, b.Negate());
 
             // ROW 10-12
-            k.SetSubMatrix(9, 11, 0, 2, b.Transpose());
-            k.SetSubMatrix(9, 11, 3, 5, d);
-            k.SetSubMatrix(9, 11, 6, 8, b.Transpose().Negate());
-            k.SetSubMatrix(9, 11, 9, 11, c);
+            k.SetSubMatrix(9, 3, 0, 3, b.Transpose());
+            k.SetSubMatrix(9, 3, 3, 3, d);
+            k.SetSubMatrix(9, 3, 6, 3, b.Transpose().Negate());
+            k.SetSubMatrix(9, 3, 9, 3, c);
 
             k *= E / L / L / L;
 
             return k;
+        }
+
+        public static void nodeGlobalIndex(Vector<Node> nodes) {
+            // assign global dof index of each node
+        }
+
+        public static void addNodeElements(Vector<Element> elements, Vector<Node> nodes) {
+
+        }
+
+        public static void addNodeLoads(Vector<Load> loads, Vector<Node> nodes) {
+
+        }
+
+        public static void reactions(Structure structure) {
+
+        }
+
+        public static void postProcess(Structure structure, double scaleFactor = 0) {
+            
+        }
+
+        public static void analyze(Structure structure, bool forceK = false) {
+            if (structure)
+                throw new Exception("Structure must be defined.");
+
+            // addNodeElements
+            // addNodeLoads
+
+            // nodeGlobalIndex
+
+            // k_elemental - set to structure.K
+
+            // U = structure.K/struucture.F
+
+            // structure.complicants = U' * structure.F
+
+            // structure.U = U
+
+            // reactions(structure)
+
+            // postProcess(stucture, scaleFactor = SF)
         }
     }
 }
