@@ -16,8 +16,8 @@ namespace dsg_wbm {
         public List<Element> displacedElements;
         public List<bool> DOFS;
         public Matrix<double> K; // global stiffness matrix
-        public List<double> F; // external loads
-        public List<double> U; // displacement after analysis
+        public Vector<double> F; // external loads
+        public Vector<double> U; // displacement after analysis
         public List<double> reactions; // external reactions
         public float complicance; // compliance after analysis
         public int nNodes; // number of nodes
@@ -42,9 +42,7 @@ namespace dsg_wbm {
                 if(this.DOFS.ElementAt(i))
                     this.freeDOFS.Add(i);
 
-            this.F = new List<double>();
-            for (int i = 0; i < this.nDOFS; i++)
-                this.F.Add(0);
+            this.F = Vector<double>.Build.Dense(this.nDOFS);
 
             var nodalDOFLength = nodes[0].DOFS.Count;
             foreach (Load l in loads)

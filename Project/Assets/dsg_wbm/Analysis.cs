@@ -10,6 +10,33 @@ namespace dsg_wbm
 {
     public static class Analysis
     {
+        public static void DOFExpander(List<Element> elements, List<Node> nodes) {
+            foreach (Element e in elements)
+                e.DOFIndex = nodes[e.NodeIndex.Item1].GlobalIndex.Concat(nodes[e.NodeIndex.Item2].GlobalIndex).ToList();
+        }
+
+        public static void NodeGlobalIndex(List<Node> nodes) {
+            for (int i = 0; i < nodes.Count; i++)
+                nodes[i].GlobalIndex = Enumerable.Range(0, nodes[i].DOFS.Count).ToList();
+        }
+
+        public static void AddNodeElements(List<Element> elements, List<Node> nodes) {
+            foreach (Node n in nodes)
+                n.Elements = new List<(int, int)>();
+            for (int i = 0; i < elements.Count; i++) {
+                var (startIdx, endIdx) = elements[i].NodeIndex;
+                nodes[startIdx].Elements.Add((i, 0));
+                nodes[endIdx].Elements.Add((i, 1));
+            }
+            foreach (Node n in nodes)
+                n.Elements = n.Elements.Distinct().ToList();
+        }
+
+        public static void AddNodeLoads(List<Load> loads, List<Node> nodes) {
+            if (loads != null)
+                for (int i = 0; i < loads.Count; i++)
+                    nodes[loads[i].Index].Load = loads[i].LoadValues;
+        }
 
         /// <summary>
         /// Local coordinate system of element
@@ -160,7 +187,6 @@ namespace dsg_wbm
          * Stiffness matrix formulations are based on Kassimali's Matrix Analysis of Structures
          */
 
-
         /// <summary>
         /// Base stiffness matrix for truss without transformation
         /// </summary>
@@ -247,23 +273,20 @@ namespace dsg_wbm
             return k;
         }
 
-        public static void nodeGlobalIndex(Vector<Node> nodes) {
-            // assign global dof index of each node
+        public static Matrix<double> K(List<Element> elements, int nDOFS) {
+            var K = Matrix<double>.Build.Dense(nDOFS, nDOFS);
+
+            foreach (Element e in elements)
+                K[e.DOFIndex, e.DOFIndex] += e.K;
+
+            return K;
         }
 
-        public static void addNodeElements(Vector<Element> elements, Vector<Node> nodes) {
-
-        }
-
-        public static void addNodeLoads(Vector<Load> loads, Vector<Node> nodes) {
-
-        }
-
-        public static void reactions(Structure structure) {
+        public static void Reactions(Structure structure) {
 
         }
 
-        public static void postProcess(Structure structure, double scaleFactor = 0) {
+        public static void PostProcess(Structure structure, double scaleFactor = 0) {
             
         }
 
@@ -271,22 +294,37 @@ namespace dsg_wbm
             if (structure)
                 throw new Exception("Structure must be defined.");
 
-            // addNodeElements
-            // addNodeLoads
+            AddNodeElements(structure.elements, structure.nodes);
+            AddNodeLoads(structure.loads, structure.nodes);
 
-            // nodeGlobalIndex
+            if (structure.K && !forceK) {
+                var U = structure.F[structure.freeDOFS].Transpose() * structure.K[structure.freeDOFS, structure.freeDOFS];
+                structure.complicance = U.Transpose() * structure.F[structure.freeDOFS];
+                return;
+            }
 
-            // k_elemental - set to structure.K
+            NodeGlobalIndex(structure.nodes);
+            DOFExpander(structure.elements, structure.nodes);
 
-            // U = structure.K/struucture.F
+            foreach (Element e in structure.elements) {
+                if (e.Type == AnalysisType.Truss)
+                    kElementalTruss(e.E, e.A, e.Length);
+                else if (e.Type == AnalysisType.Frame) {
+                    kElementalFrame(e.E, e.A, e.G, e.Length, e.Iz, e.Iy);
+                } else {
+                    throw new Exception("Unknown analysis type.");
+                }
+            }
 
-            // structure.complicants = U' * structure.F
+            structure.K = K(structure.elements, structure.nDOFS);
 
-            // structure.U = U
+            var U = structure.K[structure.freeDOFS, structure.freeDOFS].Transpose() * structure.F[structure.freeDOFS];
 
-            // reactions(structure)
+            structure.complicance = U.Transpose() * structure.F[structure.freeDOFS];
+            structure.U = U;
 
-            // postProcess(stucture, scaleFactor = SF)
+            Reactions(structure);
+            PostProcess(stucture, scaleFactor = SF);
         }
     }
 }
